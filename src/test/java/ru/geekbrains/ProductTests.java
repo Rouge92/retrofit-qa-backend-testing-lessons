@@ -11,7 +11,9 @@ import retrofit2.Converter;
 import ru.geekbrains.base.enums.CategoryType;
 import ru.geekbrains.dto.ErrorBody;
 import ru.geekbrains.dto.Product;
+import ru.geekbrains.java4.lesson6.db.dao.ProductsMapper;
 import ru.geekbrains.service.ProductService;
+import ru.geekbrains.util.DbUtils;
 import ru.geekbrains.util.RetrofitUtils;
 
 import java.io.IOException;
@@ -25,10 +27,12 @@ public class ProductTests {
     Faker faker = new Faker();
     static ProductService productService;
     Product product;
+    static ProductsMapper productsMapper;
 
     @SneakyThrows
     @BeforeAll
     static void beforeAll() {
+        productsMapper = DbUtils.getProductsMapper();
         productService = RetrofitUtils.getRetrofit()
                 .create(ProductService.class);
     }
@@ -49,6 +53,7 @@ public class ProductTests {
                         .execute();
         productId = response.body().getId();
         assertThat(response.isSuccessful()).isTrue();
+        assertThat(productsMapper.selectByPrimaryKey(Long.valueOf(productId)).getTitle()).isEqualTo(product.getTitle());
     }
     @SneakyThrows
     @Test
@@ -69,13 +74,6 @@ public class ProductTests {
     @AfterEach
     void tearDown() {
         if (productId!=null)
-        try {
-            retrofit2.Response<ResponseBody> response =
-                    productService.deleteProduct(productId)
-                            .execute();
-            assertThat(response.isSuccessful()).isTrue();
-        } catch (IOException e) {
-
-        }
+            DbUtils.getCategoriesMapper().deleteByPrimaryKey(productId);
     }
 }
